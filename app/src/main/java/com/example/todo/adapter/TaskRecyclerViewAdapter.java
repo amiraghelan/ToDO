@@ -36,16 +36,18 @@ public class TaskRecyclerViewAdapter extends RecyclerView.Adapter<TaskRecyclerVi
     List<Task> tasks;
     Context context;
     int rbIds[] =  {R.id.rb_low,R.id.rb_medium, R.id.rb_high};
+    TaskRowClicksListener taskRowClicksListener;
 
     public void sortList(){
         Collections.sort(tasks, new TaskComparator());
         notifyDataSetChanged();
     }
 
-    public TaskRecyclerViewAdapter(List<Task> tasks, Context context) {
+    public TaskRecyclerViewAdapter(List<Task> tasks, Context context, TaskRowClicksListener taskRowClicksListener) {
         this.tasks = tasks;
         Collections.sort(tasks, new TaskComparator());
         this.context = context;
+        this.taskRowClicksListener = taskRowClicksListener;
     }
 
     @NonNull
@@ -83,64 +85,29 @@ public class TaskRecyclerViewAdapter extends RecyclerView.Adapter<TaskRecyclerVi
             edit = itemView.findViewById(R.id.img_edit);
             isDone = itemView.findViewById(R.id.cb_isDone);
             delete = itemView.findViewById(R.id.img_delete);
+
             edit.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Task task = tasks.get(getAdapterPosition());
-                    Dialog dialog = new Dialog(context);
-                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-                    dialog.setCancelable(true);
-                    dialog.setContentView(R.layout.todo_dialog);
-
-                    EditText todoEditText = dialog.findViewById(R.id.edt_todo);
-                    RadioGroup radioGroup = dialog.findViewById(R.id.rg_priority);
-                    todoEditText.setText(task.getTask());
-                    radioGroup.check(rbIds[task.getPriority().getNumericValue()]);
-                    Button addButton = dialog.findViewById(R.id.btn_submit);
-                    addButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-
-                            String todo = todoEditText.getText().toString();
-                            int id = radioGroup.getCheckedRadioButtonId();
-                            RadioButton priorityRb = dialog.findViewById(id);
-                            Priority priority = Converter.toPriority(priorityRb.getText().toString());
-                            if (!todo.isEmpty()) {
-                                task.setTask(todo);
-                                task.setPriority(priority);
-                                notifyItemChanged(getAdapterPosition());
-                                sortList();
-                                dialog.dismiss();
-                            }
-                        }
-                    });
-                    dialog.show();
+                    taskRowClicksListener.onEdit(v, getAdapterPosition());
+                    sortList();
                 }
             });
             delete.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    tasks.remove(getAdapterPosition());
+                    taskRowClicksListener.onDelete(v, getAdapterPosition());
                     notifyItemRemoved(getAdapterPosition());
                 }
             });
             isDone.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    tasks.get(getAdapterPosition()).setDone(isDone.isChecked());
+                    taskRowClicksListener.onChecked(v, getAdapterPosition(), isDone.isChecked());
                     notifyItemChanged(getAdapterPosition());
                     sortList();
                 }
             });
-
-//            isDone.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-//                @Override
-//                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-//                    tasks.get(getAdapterPosition()).setDone(isDone.isChecked());
-//                    notifyItemChanged(getAdapterPosition());
-//                    sortList();
-//                }
-//            });
 
 
         }
